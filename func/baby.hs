@@ -36,3 +36,59 @@ tell :: (Show a) => [a] -> String
 tell [] = "Empty list"
 tell (x:[]) = "Element: " ++ show x
 tell (x:y:[]) = "Elements: " ++ show x ++ ", "  ++ show y
+
+firstLetter :: String -> String
+firstLetter "" = "Empty String"
+firstLetter all@(x:xs) = "The first letter of " ++ all ++ "is " ++ [x]
+
+bmiTell :: Double -> Double -> String
+bmiTell weight height
+    | bmi <= skinny = "Underweight!"
+    | bmi <= normal = "Normal"
+    | bmi <= fat = "Fat!"
+    | otherwise   = "Who are you?"
+    where bmi = weight / height^2
+          skinny = 18.5
+          normal = 25.0
+          fat = 3.0
+    
+max' :: (Ord a) => a -> a -> a
+max' a b
+    | a<=b = b
+    | otherwise = a
+
+myCompare :: (Ord a) => a -> a-> Ordering
+a `myCompare` b
+    | a==b = EQ
+    | a<=b = LT
+    | otherwise = GT
+    
+initials :: String -> String -> String
+initials firstname lastname = [f] ++ ". " ++ [l] ++ "."
+    where (f:_) = firstname
+          (l:_) = lastname
+
+calcBMIs :: [(Double, Double)] -> [Double]
+calcBMIs xs = [bmi w h | (w,h) <- xs]
+    where bmi weight height = weight / height^2
+    
+cylinder :: Double -> Double -> Double
+cylinder r h =
+    let sideArea = 2*pi*r*h
+        topArea = pi*r^2
+    in sideArea + 2*topArea
+
+calcBMIs' :: [(Double, Double)] -> [Double]
+calcBMIs' xs = [bmi | (w,h) <- xs, let bmi = w/h^2]
+    
+head'' :: [a] -> a
+head'' xs = case xs of [] -> error "Nonono"
+                       (x:_) -> x
+
+describeList :: [a] -> String
+describeList ls = "The list is " ++ case ls of [] -> "Empty"
+                                               [x] -> "Singleton list"
+                                               xs -> "Longer list"
+
+
+                      
