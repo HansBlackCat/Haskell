@@ -35,3 +35,5 @@ quicksort (x:xs) =
     let small = [a | a<-xs, a<=x]
         large = [a | a<-xs, a>x]
         in quicksort small ++ [x] ++ quicksort large
+        
+
