@@ -1,0 +1,3 @@
+This revised version of the files fixes a bug in PriorityQ.hs, as pointed out
+by Eugene Kirpichov on February 24, 2009 on the haskell-cafe mailing list, and
+fixed by Bertram Felgenhauer.

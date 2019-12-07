@@ -1,0 +1,91 @@
+-- Generate Primes using ideas from The Sieve of Eratosthenes
+--
+-- This code is intended to be a faithful reproduction of the
+-- Sieve of Eratosthenes, with the following change from the original
+--   - The list of primes is infinite
+-- (This change does have consequences for representing the number table
+-- from which composites are "crossed out".)
+--
+-- (c) 2006-2007 Melissa O'Neill.  Code may be used freely so long as
+-- this copyright message is retained and changed versions of the file
+-- are clearly marked.
+
+module ONeillPrimes (primes, sieve, primesToNth, primesToLimit) where
+
+import PriorityQ as PQ
+
+-- Here we use a wheel to generate all the number that are not multiples
+-- of 2, 3, 5, and 7.  We use some hard-coded data for that.
+
+wheel = 2:4:2:4:6:2:6:4:2:4:6:6:2:6:4:2:6:4:6:8:4:2:4:2:4:8:6:4:6:2:4:6
+	:2:6:6:4:2:4:6:2:6:4:2:4:2:10:2:10:wheel
+
+wheeler n (x:xs) = n : wheeler (n + x) xs
+
+avoid2357 = wheeler 11 wheel
+
+-- Now generate the primes using that wheel
+
+primes :: [Integer]
+primes = 2 : 3 : 5 : 7 : sieve avoid2357
+
+sieve :: [Integer] -> [Integer]
+sieve [] = []
+sieve (x:xs) = x : sieve' xs (insertprime x xs PQ.empty)
+  where
+    insertprime p xs table = PQ.insert (p*p) (map (* p) xs) table
+    sieve' []     table = []
+    sieve' (x:xs) table
+        | nextComposite <= x	=  sieve' xs (adjust table)
+        | otherwise		=  x : sieve' xs (insertprime x xs table)
+        where
+            nextComposite = PQ.minKey table
+            adjust table
+                | n <= x    = adjust (PQ.deleteMinAndInsert n' ns table)
+                | otherwise = table
+              where
+		(n, n':ns) = PQ.minKeyValue table
+
+-- Often we want a finite list of primes, not an infinite one; so below
+-- we have a revised version of the above code that produces finite lists.
+-- The advantage of finite (but lazy) lists, even very long ones, is that
+-- we don't have to keep track of every prime we encounter in the heap.
+
+nThPrimeApprox :: Int -> Integer
+nThPrimeApprox nth
+    | n < 13    = 37
+    | otherwise = round realApprox
+    where
+       n          = fromInteger (toInteger (nth))
+       realApprox = n * (log n + log (log n) - 1 + 1.8 * log (log n) / log n)
+
+primesToNth :: Int -> [Integer]
+primesToNth n = take n (primesToLimit (nThPrimeApprox n))
+
+primesToLimit :: Integer -> [Integer]
+primesToLimit n
+    | n < 11    = takeWhile (< n) [2,3,5,7]
+    | otherwise = 2 : 3 : 5 : 7 : lsieve n avoid2357
+    
+lsieve :: Integer -> [Integer] -> [Integer]
+lsieve limit [] = []
+lsieve limit (x:xs) = x : sieve' xs (insertprime x xs PQ.empty)
+  where
+    limit' = max (x*x+1) limit      -- ensure heap isn't empty for small limits
+    insertprime p xs table
+        | psq < limit' = PQ.insert psq (map (* p) xs) table
+        | otherwise    = table
+        where
+            psq = p * p
+    sieve' []     table = []
+    sieve' (x:xs) table
+        | x > limit             =  []
+        | nextComposite <= x	=  sieve' xs (adjust table)
+        | otherwise		=  x : sieve' xs (insertprime x xs table)
+        where
+            nextComposite = PQ.minKey table
+            adjust table
+                | n <= x    = adjust (PQ.deleteMinAndInsert n' ns table)
+                | otherwise = table
+              where
+		(n, n':ns) = PQ.minKeyValue table
