@@ -20,3 +20,6 @@ treeElem x (Node a left right)
     | x == a = True
     | x < a  = treeElem x left
     | otherwise  = treeElem x right
+
+treeStruct :: [Int] -> Tree Int
+treeStruct = foldr treeInsert EmptyTree 
