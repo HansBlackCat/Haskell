@@ -21,5 +21,5 @@ treeElem x (Node a left right)
     | x < a  = treeElem x left
     | otherwise  = treeElem x right
 
-treeStruct :: [Int] -> Tree Int
+treeStruct :: [Integer] -> Tree Integer
 treeStruct = foldr treeInsert EmptyTree 
