@@ -1,7 +1,8 @@
 module Main where
 
 import Lib
+import LeftistHeap
 
 main :: IO ()
-main = someFunc
+main = putStrLn "hello world"
 
