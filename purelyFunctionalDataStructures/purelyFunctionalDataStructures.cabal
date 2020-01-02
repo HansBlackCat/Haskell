@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7cc6a525c36dbf9ca2be538dc908986be058db72ab84782e7a8774a0373e2819
+-- hash: e20386913f6b127ba0828d3ad75ac2609afc208abc4225a2cd266a6f915a12ac
 
 name:           purelyFunctionalDataStructures
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      BinomialHeap
       Heap
       LeftistHeap
       Lib
