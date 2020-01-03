@@ -1,4 +1,6 @@
-module Lib(module Lib, module ArrowFun) where
+module Lib(module Lib, 
+           module ArrowFun,
+           ) where
 
 import ArrowFun
 
