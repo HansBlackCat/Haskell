@@ -37,8 +37,8 @@ module BinomialHeap (module Heap, BinomialHeap) where
     h_empty = BH []
     h_isEmpty (BH ts) = null ts 
     
-    h_insert x (BS ts) = BH (insTree (Node 0 x []) ts)
-    h_merge (BH ts1) (BS ts2) = BH (mrg ts1 ts2)
+    h_insert x (BH ts) = BH (insTree (Node 0 x []) ts)
+    h_merge (BH ts1) (BH ts2) = BH (mrg ts1 ts2)
     
     h_findMin (BH ts) = root t 
       where (t,_) = removeMinTree ts 

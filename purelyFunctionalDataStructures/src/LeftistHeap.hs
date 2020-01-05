@@ -5,7 +5,7 @@ module LeftistHeap (module Heap, LeftistHeap) where
   data LeftistHeap a = E | T Int a (LeftistHeap a) (LeftistHeap a)
 
   -- rank 
-  rank E = 0
+  rank E = 0 
   rank (T r _ _ _) = r 
   
   -- Swap & Wrap-up & Rank-calculate
