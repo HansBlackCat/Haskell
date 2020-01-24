@@ -6,4 +6,3 @@ import ArrowFun
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
-
