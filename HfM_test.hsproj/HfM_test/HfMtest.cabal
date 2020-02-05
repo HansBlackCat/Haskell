@@ -1,0 +1,13 @@
+cabal-version: 2.4
+name: HfMtest
+version: 1.0
+stability: experimental
+x-ghc-framework-version: 8.6.4-13.14-2
+x-last-ide-version: HfM1.7.0
+
+executable HfMtest
+    main-is: Main.hs
+    default-language: Haskell2010
+    build-depends:
+        base -any,
+        array -any

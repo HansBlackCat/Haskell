@@ -1,0 +1,50 @@
+
+./Setup.hs,15
+main main1,2
+
+./app/Main.hs,50
+module Main Main0,1
+main main5,6
+key key8,9
+
+./test/Spec.hs,15
+main main0,1
+
+./src/BinomialHeap.hs,485
+  data Tree Tree4,5
+  data Tree a = Node Node4,5
+  newtype BinomialHeap BinomialHeap5,6
+  newtype BinomialHeap a = BH BH5,6
+  rank rank7,8
+  root root8,9
+  link link10,11
+  insTree insTree14,15
+  mrg mrg20,21
+  removeMinTree removeMinTree27,28
+  instance Heap Heap BinomialHeap35,36
+    h_empty h_empty36,37
+    h_isEmpty h_isEmpty37,38
+    h_insert h_insert39,40
+    h_merge h_merge40,41
+    h_findMin h_findMin42,43
+    h_deleteMin h_deleteMin45,46
+
+./src/LeftistHeap.hs,362
+module LeftistHeap LeftistHeap0,1
+  data LeftistHeap a = E E4,5
+  data LeftistHeap a = E | T T4,5
+  rank rank7,8
+  makeT makeT11,12
+  instance Heap Heap LeftistHeap15,16
+    h_empty h_empty16,17
+    h_isEmpty h_isEmpty17,18
+    h_insert h_insert21,22
+    h_merge h_merge22,23
+    h_findMin h_findMin31,32
+    h_deleteMin h_deleteMin34,35
+
+./src/Lib.hs,20
+module Lib Lib0,1
+
+./src/Heap.hs,22
+module Heap(Heap0,1

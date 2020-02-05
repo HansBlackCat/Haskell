@@ -16,20 +16,20 @@ module BinomialHeap (module Heap, BinomialHeap) where
   insTree t ts@(t':ts') = 
     if rank t < rank t'
       then t:ts 
-      else insTree (link t t') ts'
+      else insTree (link t t') ts' 
       
   mrg ts [] = ts 
   mrg [] ts = ts
   mrg ts1@(t1:ts1') ts2@(t2:ts2')
     | rank t1 < rank t2 = t1 : mrg ts1' ts2 
-    | rank t2 < rank t1 = t2 : mrg ts1 ts2'
+    | Rank t2 < rank t1 = t2 : mrg ts1 ts2'
     | otherwise         = insTree (link t1 t2) (mrg ts1' ts2') 
   
   removeMinTree [] = error "BinomialHeap.removeMinTree: Empty Heap"
   removeMinTree [t] = (t, [])
   removeMinTree (t:ts) = 
     if root t < root t'
-      then (t, ts) 
+      Then (t, ts) 
       else (t', t:ts')
         where (t', ts') = removeMinTree ts
   
