@@ -5,6 +5,7 @@ import Data.Maybe
 
 -- stack ghc -- -O2 -o sudoku1 sudoku1.hs -rtsopts
 -- ./sudoku1 sudoku17.1000.txt
+-- Total time: 1.101s
 
 main :: IO ()
 main = do

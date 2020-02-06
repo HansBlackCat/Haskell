@@ -10,6 +10,7 @@ import Data.Maybe
 -- stack ghc -O2 -- -o sudoku2 sudoku2.hs -rtsopts -threaded -eventlog
 -- ./sudoku2 sudoku17.1000.txt +RTS -N2 -l
 -- threadscope sudoku2.eventlog
+-- Total time: 0.765s (x1.439)
 
 main :: IO()
 main = do 

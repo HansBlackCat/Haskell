@@ -4,9 +4,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-           "label": "ghc -O2 build",
+           "label": "ghc -O2 -rtsopts -threaded -eventlog",
            "type": "shell",
-           "command": "stack ghc -- -O2 -o ${fileDirname}/${fileBasenameNoExtension} ${fileDirname}/${fileBasename}",
+           "command": "stack ghc -- -O2 -o ${fileDirname}/${fileBasenameNoExtension} ${fileDirname}/${fileBasename} -rtsopts -threaded -eventlog",
            "group": "build"
         }
     ]
