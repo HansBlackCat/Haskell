@@ -1,19 +1,79 @@
 -- Haskell Playground 1.0
-id_3
+mat_a
+
+
+
+
+
+id_4
+
+
+
+
+fromListMatrix
+
+
+
+
+matToLists
+
+getElemofMata
+
+getRowofMata
+
+transMat_a
+
+
+
+
+extendMata 
+
+
+
+
+
+mapRowMata
+
+
+
+
+subMatricMata
+
+
+
+luDtempMat
+
+
+
+
+luDMata
 
 
 
 
 
 
-z
 
 
 
 
-transpose$ a .* b
 
 
+
+
+
+cholMata
+
+
+
+
+
+
+
+
+
+
+detTest 
 
 
 

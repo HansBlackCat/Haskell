@@ -9,5 +9,7 @@ executable Mathtest
     main-is: Main.hs
     default-language: Haskell2010
     build-depends:
+        Chart -any,
         base -any,
-        matrix-static -any
+        matrix -any,
+        vector -any
