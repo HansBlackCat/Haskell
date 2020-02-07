@@ -1,3 +1,5 @@
+-- Total time: 1.514s
+
 fib :: Integer -> Integer
 fib 0 = 1
 fib 1 = 1
