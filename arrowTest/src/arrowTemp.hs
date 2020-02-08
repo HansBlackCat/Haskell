@@ -75,8 +75,6 @@ meanTest =
   sum &&& length >>>
   arr (\(x, y) -> x `div` y)
 
-
-
 fA :: Int -> (Int, Int)
 fA = proc x -> do
   y  <- (2 *) -< x
