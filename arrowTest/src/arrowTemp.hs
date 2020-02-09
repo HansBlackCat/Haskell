@@ -11,21 +11,21 @@ import Data.Char
 --------------------------------------------------------------
 -- main
 main = do
-    putStrLn $ "f = arr even $ 42 ::: " ++ (show f)
-    putStrLn $ "g = arr ord >>> arr even $ '*' ::: " ++ (show g) 
-    putStrLn $ "h = (first $ arr even) (42, 42) ::: " ++ (show h)
-    putStrLn $ "fA ::: " ++ (show $ fA 10)
-    putStrLn $ "idA 3 ::: " ++ (show $ idA 3)
-    putStrLn $ "plusOne 34 ::: " ++ (show $ plusOne 34)
-    putStrLn $ "plusOneAndTwo 3 ::: " ++ (show $ plusOneAndTwo 3)
-    putStrLn $ "addAb (*3) (+20) 5 ::: " ++ (show $ addAb (*3) (+20) 5)
-    putStrLn $ "addAbs (*3) (+20) 5 ::: " ++ (show $ addAbs (*3) (+20) 5)
-    putStrLn $ "meanTest [1,2,3,10,9] ::: " ++ (show $ meanTest [1,2,3,10,9])
+  putStrLn $ "f = arr even $ 42 ::: " ++ show f
+  putStrLn $ "g = arr ord >>> arr even $ '*' ::: " ++ show g
+  putStrLn $ "h = (first $ arr even) (42, 42) ::: " ++ show h
+  putStrLn $ "fA ::: " ++ show (fA 10)
+  putStrLn $ "idA 3 ::: " ++ show (idA 3)
+  putStrLn $ "plusOne 34 ::: " ++ show (plusOne 34)
+  putStrLn $ "plusOneAndTwo 3 ::: " ++ show (plusOneAndTwo 3)
+  putStrLn $ "addAb (*3) (+20) 5 ::: " ++ show (addAb (* 3) (+ 20) 5)
+  putStrLn $ "addAbs (*3) (+20) 5 ::: " ++ show (addAbs (* 3) (+ 20) 5)
+  putStrLn $ "meanTest [1,2,3,10,9] ::: " ++ show (meanTest [1, 2, 3, 10, 9])
 -- /main
 --------------------------------------------------------------
 
 -- show
-f = arr even $ 42
+f = arr even 42
 g = arr ord >>> arr even $ '*'
 h = (first $ arr even) (42, 42)
 -- /show
@@ -67,13 +67,10 @@ addAa f g = proc x -> do
 addAb f g = arr (\ x -> (x, x)) >>>
   first f >>> arr (\ (y, x) -> (x, y)) >>>
   first g >>> arr (\ (z, y) -> y + z)
-addAbs f g = 
-  f &&& g >>>
-  arr (\(y, z) -> y + z)
 
-meanTest =
-  sum &&& length >>>
-  arr (\(x, y) -> x `div` y)
+addAbs f g = f &&& g >>> arr (uncurry (+))
+
+meanTest = sum &&& length >>> arr (uncurry div)
 
 fA :: Int -> (Int, Int)
 fA = proc x -> do
