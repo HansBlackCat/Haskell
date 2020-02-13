@@ -32,6 +32,34 @@ packages:
       sha256: 4552e3c0f2ef0f16285c38898d7e2b6aeea67d4e37cd203b0c82f70592096c45
   original:
     hackage: gtk2hs-buildtools-0.13.8.0@sha256:132f38155fc677430a47ea750918973161c876fb6f281d342ac2f07eb99229ce,5238
+- completed:
+    hackage: generic-lens-core-2.0.0.0@sha256:40b063c4a1399b3cdb19f2df1fae5a1a82f3313015c7c3e47fc23b8ef1b3e443,2913
+    pantry-tree:
+      size: 2201
+      sha256: 73f91636570c0e96044f655402ccbf6adba78d3a93f8d9ee97f3115bae096536
+  original:
+    hackage: generic-lens-core-2.0.0.0@sha256:40b063c4a1399b3cdb19f2df1fae5a1a82f3313015c7c3e47fc23b8ef1b3e443,2913
+- completed:
+    hackage: optics-core-0.2@sha256:cfdf39871553769b59fcc54863a3521d262ea25d8d05d0f41ab87296c560cfa6,4392
+    pantry-tree:
+      size: 4818
+      sha256: 77521681ab5e6fd84a31b7cf9c5f51233141eecd7b9545a1c9eef6b1015776bc
+  original:
+    hackage: optics-core-0.2@sha256:cfdf39871553769b59fcc54863a3521d262ea25d8d05d0f41ab87296c560cfa6,4392
+- completed:
+    hackage: indexed-profunctors-0.1@sha256:ddf618d0d4c58319c1e735e746bc69a1021f13b6f475dc9614b80af03432e6d4,1016
+    pantry-tree:
+      size: 235
+      sha256: cfd66c0a53be1b45eae72df112ea1158614458bb7b1c9cbbe3410b04ab011ec6
+  original:
+    hackage: indexed-profunctors-0.1@sha256:ddf618d0d4c58319c1e735e746bc69a1021f13b6f475dc9614b80af03432e6d4,1016
+- completed:
+    hackage: generic-optics-2.0.0.0@sha256:54bcfc4ffce961600020f3d5de13827953c96e99012e7e6acc6e28b336ad50e0,3715
+    pantry-tree:
+      size: 2172
+      sha256: f7fcb103298804980c93e1513446c74005a6cd21e99a80ff3c005a520599095f
+  original:
+    hackage: generic-optics-2.0.0.0@sha256:54bcfc4ffce961600020f3d5de13827953c96e99012e7e6acc6e28b336ad50e0,3715
 snapshots:
 - completed:
     size: 524155

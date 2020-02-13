@@ -39,6 +39,11 @@ extra-deps:
   - cairo-0.13.8.0@sha256:9b64a376ebaa4f153bba5866a32291fd4bed48147009cce9158ce6533928eba8,4075
   - Chart-cairo-1.9.3@sha256:05cecda5743954e43c8eabea788e0c19300c305346febee727ce578f69e30748,879
   - gtk2hs-buildtools-0.13.8.0@sha256:132f38155fc677430a47ea750918973161c876fb6f281d342ac2f07eb99229ce,5238
+  - generic-lens-core-2.0.0.0@sha256:40b063c4a1399b3cdb19f2df1fae5a1a82f3313015c7c3e47fc23b8ef1b3e443,2913
+  - optics-core-0.2@sha256:cfdf39871553769b59fcc54863a3521d262ea25d8d05d0f41ab87296c560cfa6,4392
+  - indexed-profunctors-0.1@sha256:ddf618d0d4c58319c1e735e746bc69a1021f13b6f475dc9614b80af03432e6d4,1016
+  - generic-optics-2.0.0.0@sha256:54bcfc4ffce961600020f3d5de13827953c96e99012e7e6acc6e28b336ad50e0,3715
+
 
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
