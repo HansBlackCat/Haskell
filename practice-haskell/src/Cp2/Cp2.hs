@@ -40,6 +40,14 @@ clientName1 client = case client of
                            case person of
                              Person fNm lNm gender -> fNm ++ " " ++ lNm
 
+clientNameR :: ClientR -> String 
+clientNameR client = case client of 
+                          GovOrgR name         -> name 
+                          CompanyR name _ _ _  -> name 
+                          IndividualR person ->
+                            case person of 
+                              PersonR a b      -> a ++ " " ++ b
+
 ifibonacci :: Integer -> Maybe Integer
 ifibonacci n | n < 0    = Nothing
 ifibonacci 0            = Just 0

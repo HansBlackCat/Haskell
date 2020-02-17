@@ -1,10 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TransformListComp #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ParallelListComp #-}
 
 module Cp3.Cp3 where
 
 import Cp2.Cp2
 import Data.List
 import Data.Function
+import GHC.Exts
 
 swap (x,y,z) = (y,z,x)
 
@@ -114,6 +118,7 @@ listOfClients
   = [ IndividualR (PersonR "H. G." "Wells")
     , GovOrgR "NTTF"  -- National Time Travel Foundation
     , CompanyR "Wormhole Inc." 3 (PersonR "Karl" "Schwarzschild") "Physicist"
+    , CompanyR "Wormhole Inc." 10 (PersonR "John" "Neumann") "Z-Mathematician"
     , IndividualR (PersonR "Doctor" "")
     , IndividualR (PersonR "Sarah" "Jane")
     ]
@@ -132,4 +137,70 @@ companyDutiesAnalytics' = map (duty. head).
   sortBy (flip (compare `on` length)).
   groupBy ((==) `on` duty).
   filter isCompanyR
+
+withPosition :: [a] -> [(Int, a)]
+withPosition list = zip [0..length list] list 
+
+duplicateOdd :: [Integer] -> [Integer]
+duplicateOdd list = map (*2) $ filter odd list
+
+duplicateOddList :: [Integer] -> [Integer]
+duplicateOddList list = [2*x | x <- list, odd x]
+
+-- {-# LANGUAGE TransformListComp #-} 
+-- [x*y | x <- [1..4], y<- [3..9], then reverse]
+
+-- import GHC.Exts
+-- [x*y | x <- [1..4], y<- [3..9], then sortWith by x]
+
+-- [(the p, m) | x<-[-1,1,2], y<-[1..4], let m = x*y, let p = m>0, then group by p using groupWith ]
+-- > [(False,[-1,-2,-3,-4]),(True,[1,2,3,4,2,4,6,8])]
+
+-- `then group by` e using `f` 
+-- f :: (a -> b) -> [a] -> [[a]]
+complicatedUsageOfApplicList = [(the p, m) | x<-[-1,1,2], y<-[1..4], let m = x*y, let p = m>0, then group by p using groupWith ]
+
+alphaCal p
+  | p > 10    = "A"
+  | p > 5     = "B"
+  | p > 0     = "C"
+  | otherwise = "D"
+calculateProp = [(the p, x) | x <- [-5..15], let p = alphaCal x, then group by p using groupWith ]
+-- > [("A",[11,12,13,14,15]),("B",[6,7,8,9,10]),("C",[1,2,3,4,5]),("D",[-5,-4,-3,-2,-1,0])]
+
+companyAnalytics :: [ClientR] -> [(String, [(PersonR, String)])]
+companyAnalytics clients =
+  [(the clientRName, zip person duty)
+  | client@(CompanyR {..}) <- clients
+  , then sortWith by duty 
+  , then group by clientRName using groupWith
+  , then sortWith by length client
+  ]
+
+-- {-# LANGUAGE ParallelListComp #-}
+parListCompTest = [x*y | x <- [1,2,3] | y <- [1,2,3]]
+-- > [1,4,9]
+
+mapAsFold :: (a -> b) -> [a] -> [b]
+mapAsFold f = foldr (\x l -> f x : l) []
+
+-- map f. map g == map (f. g)
+
+
+-- unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
+
+-- seeds: 1  ->  2  ->  3  ->  4
+--        1>3?  2>3?    3>3?   4>3(O) ==> Stop 
+--        [1,     2,     3]
+-- Just (x, s) -> x: what append to list, s: new seed
+enumUnfold :: Int -> Int -> [Int]
+enumUnfold n m = unfoldr (\x -> if x > m 
+                                  then Nothing
+                                  else Just (x, x+1)) n
+
+minSort :: [Integer] -> [Integer]
+minSort = unfoldr (\case [] -> Nothing
+                         xs -> Just (m, delete m xs)
+                                where m = minimum xs)
+
 
