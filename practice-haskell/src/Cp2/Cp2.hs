@@ -24,7 +24,7 @@ data ClientR = GovOrgR     { clientRName :: String }
 data PersonR = PersonR { firstName :: String
                        , lastName :: String
                        } 
-             deriving Show
+             deriving (Show, Eq, Ord, Read)
 
 data Person = Person String String Gender
             deriving Show
