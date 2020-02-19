@@ -180,3 +180,12 @@ instance Num Complex where
   signum :: a -> a
   fromInteger :: Integer -> a
 -}
+
+data TravelGuide = TravelGuide { title :: String
+                               , authors :: [String]
+                               , price :: Double}
+                   deriving (Show, Eq, Ord)
+
+-- Simple binary tree
+
+
