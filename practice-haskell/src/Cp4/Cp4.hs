@@ -187,5 +187,3 @@ data TravelGuide = TravelGuide { title :: String
                    deriving (Show, Eq, Ord)
 
 -- Simple binary tree
-
-
