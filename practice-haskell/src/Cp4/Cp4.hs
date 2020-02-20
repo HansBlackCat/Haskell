@@ -187,3 +187,20 @@ data TravelGuide = TravelGuide { title :: String
                    deriving (Show, Eq, Ord)
 
 -- Simple binary tree
+data BinaryTree1 = Node1 TravelGuide BinaryTree1 BinaryTree1 | Leaf1 
+  deriving (Show)
+
+treeFind1 :: TravelGuide -> BinaryTree1 -> Maybe TravelGuide
+treeFind1 _ Leaf1         = Nothing 
+treeFind1 t (Node1 v l r) = case compare t v of
+                              EQ -> Just v
+                              LT -> treeFind1 t l 
+                              GT -> treeFind1 t r 
+
+treeInsert1 :: TravelGuide -> BinaryTree1 -> BinaryTree1
+treeInsert1 t Leaf1           = Node1 t Leaf1 Leaf1
+treeInsert1 t n@(Node1 v l r) = case compare t v of
+                                  EQ -> n 
+                                  LT -> Node1 v (treeInsert1 t l) r 
+                                  GT -> Node1 v l (treeInsert1 t r)
+
