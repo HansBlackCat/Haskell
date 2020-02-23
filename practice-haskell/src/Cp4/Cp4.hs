@@ -186,7 +186,7 @@ data TravelGuide = TravelGuide { title :: String
                                , price :: Double}
                    deriving (Show, Eq, Ord)
 
--- Simple binary tree
+-- Simple Binary Tree
 data BinaryTree1 = Node1 TravelGuide BinaryTree1 BinaryTree1 | Leaf1 
   deriving (Show)
 
@@ -203,4 +203,47 @@ treeInsert1 t n@(Node1 v l r) = case compare t v of
                                   EQ -> n 
                                   LT -> Node1 v (treeInsert1 t l) r 
                                   GT -> Node1 v l (treeInsert1 t r)
+
+-- Polymorphic Binary Tree
+data BinaryTree2 a = Node2 a (BinaryTree2 a) (BinaryTree2 a)
+                   | Leaf2
+                   deriving (Show)
+
+treeFind2 :: Ord a => a -> BinaryTree2 a -> Maybe a
+treeFind2 _ Leaf2         = Nothing
+treeFind2 t (Node2 v l r) = case compare t v of
+                              EQ -> Just v
+                              LT -> treeFind2 t l 
+                              GT -> treeFind2 t r 
+
+treeInsert2 :: Ord a => a -> BinaryTree2 a -> BinaryTree2 a 
+treeInsert2 t Leaf2           = Node2 t Leaf2 Leaf2 
+treeInsert2 t n@(Node2 v l r) = case compare t v of
+                                  EQ -> n
+                                  LT -> Node2 v (treeInsert2 t l) r
+                                  GT -> Node2 v l (treeInsert2 t r)
+
+treeConcat2 :: Ord a => BinaryTree2 a -> BinaryTree2 a -> BinaryTree2 a
+treeConcat2 Leaf2 Leaf2          = Leaf2 
+treeConcat2 Leaf2 r              = r
+treeConcat2 l Leaf2              = l
+treeConcat2 l r@(Node2 rv rl rr) = 
+  treeConcat2 (treeInsert2 rv l) (treeConcat2 rl rr) 
+
+
+treeFromList2 :: Ord a => [a] -> BinaryTree2 a
+treeFromList2 [] = Leaf2 
+treeFromList2 (x:xs) = treeInsert2 x (treeFromList2 xs)
+
+-- DEBUG
+treeDEBUG1 = treeFromList2 $ reverse [5,3,7]
+treeDEBUG2 = treeFromList2 $ reverse [4,2,6]
+
+-- TravelGuide
+-- Duplicate (Deriving Ord vs instanciation)
+-- Wrapper of data
+newtype TGByPrice = TGByPrice TravelGuide deriving Eq
+instance Ord TGByPrice where
+  (TGByPrice (TravelGuide t1 a1 p1)) <= (TGByPrice (TravelGuide t2 a2 p2)) = 
+    p1 < p2 || (p1 == p2 && (t1 < t2 || (t1 == t2 && a1 <= a2)))
 
