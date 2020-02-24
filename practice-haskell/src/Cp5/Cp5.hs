@@ -48,5 +48,6 @@ fibonacci2 = map fst $ iterate (\(n, n1) -> (n1, n+n1)) (0, 1)
 -- [0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,..]
 
 eratosSieve :: [Integer]
-eratosSieve = 2 : 3 : minus [5,7..] (foldr O.union [] [[p*p, p*p+2*p..] | p <- tail eratosSieve])
+eratosSieve = 2 : 3 : minus [5,7..] (unionAll [[p*p, p*p+2*p..] | p <- tail eratosSieve])
+
 

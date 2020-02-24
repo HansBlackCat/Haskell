@@ -230,7 +230,6 @@ treeConcat2 l Leaf2              = l
 treeConcat2 l r@(Node2 rv rl rr) = 
   treeConcat2 (treeInsert2 rv l) (treeConcat2 rl rr) 
 
-
 treeFromList2 :: Ord a => [a] -> BinaryTree2 a
 treeFromList2 [] = Leaf2 
 treeFromList2 (x:xs) = treeInsert2 x (treeFromList2 xs)
