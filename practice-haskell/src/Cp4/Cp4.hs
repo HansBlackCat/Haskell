@@ -8,7 +8,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Tree
 import Data.Graph
-
+import Data.Monoid
 
 -- Hackage: containers
 -- stack.yaml
@@ -247,3 +247,68 @@ instance Ord TGByPrice where
   (TGByPrice (TravelGuide t1 a1 p1)) <= (TGByPrice (TravelGuide t2 a2 p2)) = 
     p1 < p2 || (p1 == p2 && (t1 < t2 || (t1 == t2 && a1 <= a2)))
 
+-- Binary Trees with Monoidal Cache
+data BinaryTree3 v c = Node3 v c (BinaryTree3 v c) (BinaryTree3 v c)
+                     | Leaf3
+                     deriving (Show, Eq, Ord)
+
+treeInsert3 :: (Ord v, Ord c) => v -> c -> BinaryTree3 v c -> BinaryTree3 v c
+treeInsert3 v c Leaf3 = Node3 v c Leaf3 Leaf3
+treeInsert3 v c (Node3 v2 c2 l r) =
+  case compare v v2 of
+    EQ -> Node3 v2 c2 l r 
+    LT -> Node3 v2 (min c c2) (treeInsert3 v c l) r
+    GT -> Node3 v2 (min c c2) l (treeInsert3 v c r)
+
+-- import Data.Monoid
+-- Binary Trees with Monoid
+data BinaryTree4 v c = Node4 v c (BinaryTree4 v c) (BinaryTree4 v c)
+                     | Leaf4
+                     deriving (Show, Eq, Ord)
+
+cached :: Monoid c => BinaryTree4 v c -> c 
+cached (Node4 _ c _ _) = c 
+cached Leaf4           = mempty                   
+
+treeInsert4 :: (Ord v, Monoid c) => v -> c -> BinaryTree4 v c -> BinaryTree4 v c 
+treeInsert4 v c Leaf4 = Node4 v c Leaf4 Leaf4
+treeInsert4 v c (Node4 v2 c2 l r) =
+  case compare v v2 of 
+    EQ -> Node4 v2 c2 l r 
+    LT -> let newLeft  = treeInsert4 v c l
+              newCache = c2 <> cached newLeft <> cached r 
+          in  Node4 v2 newCache newLeft r 
+    GT -> let newRight = treeInsert4 v c r
+              newCache = c2 <> cached l <> cached newRight
+          in  Node4 v2 newCache l newRight 
+
+newtype Min = Min Double deriving (Show)
+instance Semigroup Min where
+  Min x <> Min y = Min $ min x y 
+instance Monoid Min where 
+  mempty  = Min infinity where infinity = 1/10
+  mappend = (<>) -- From semigroup
+
+{-
+data TravelGuide = TravelGuide { title :: String
+                               , authors :: [String]
+                               , price :: Double}
+                   deriving (Show, Eq, Ord)
+-}
+
+modifyTravelGuidePrice :: Double -> [TravelGuide] -> [TravelGuide]
+modifyTravelGuidePrice m = map (\tg -> tg {price = m * price tg})
+
+modifyTravelGuidePriceMap :: Double -> M.Map a TravelGuide -> M.Map a TravelGuide
+modifyTravelGuidePriceMap m = M.map (\tg -> tg {price = m * price tg})
+
+modifyTravelGuidePriceTree :: Double -> Tree TravelGuide -> Tree TravelGuide
+modifyTravelGuidePriceTree m = fmap (\tg -> tg {price = m * price tg})
+
+-- Using Functor
+modifyTravelGuidePrice' :: Functor f => Double -> f TravelGuide -> f TravelGuide
+modifyTravelGuidePrice' m = fmap (\tg -> tg {price = m * price tg})
+
+-- Char, Integer => kind *
+-- Maybe         => kind * -> *
+-- Maybe Integer => kind *
