@@ -8,6 +8,7 @@ import Data.List
 import Data.Map as M hiding (foldr, map)
 import Control.Lens
 import Data.Char
+import Control.Monad
 
 -- Data Mining Algorithms
 -- cluster algorithms
@@ -214,3 +215,13 @@ kMeansSBase state =
     in if state3 ^. err < state3 ^. threshold 
          then state3
          else kMeansSBase state3
+
+-- ------------------------------------------------------------------------
+-- Monad
+-- ------------------------------------------------------------------------
+
+-- p200 
+
+-- ------------------------------------------------------------------------
+-- Monad Law
+-- ------------------------------------------------------------------------
