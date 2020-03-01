@@ -25,6 +25,8 @@ dependencies:
 - data-ordlist < 0.5
 - deepseq < 2.0
 - lens < 5.0
+- mtl
+
 
 library:
   source-dirs: src
