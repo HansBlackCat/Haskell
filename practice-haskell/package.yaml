@@ -26,6 +26,7 @@ dependencies:
 - deepseq < 2.0
 - lens < 5.0
 - mtl
+- logict < 1.0
 
 
 library:

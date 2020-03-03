@@ -1,16 +1,17 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase       #-}
 module Cp7.Cp7 where
 
-import Data
+import           Data
 
-import Control.Monad
-import Control.Lens
-import Data.List
-import Control.Monad.Reader
-import Control.Monad.Writer hiding (Product)
-import Data.Set (Set)
-import qualified Data.Set as S
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad.Reader
+import           Control.Monad.Writer hiding (Product)
+import           Data.List
+import           Data.Set             (Set)
+import qualified Data.Set             as S
+import Control.Monad.Logic
 
 -- ------------------------------------------------------------------------
 -- Apriori Algorithm
@@ -45,7 +46,7 @@ newtype FrequentSet = FrequentSet (Set PurchaseInfo)
                     deriving (Show, Eq, Ord)
 
 data AssocRule = AssocRule (Set PurchaseInfo) (Set PurchaseInfo)
-               deriving (Eq, Ord)
+    deriving (Eq, Ord)
 
 instance Show AssocRule where
   show (AssocRule s1 s2) = show s1 ++ " => " ++ show s2
@@ -72,19 +73,144 @@ generateL1 minSupport transactions =
               guard $ setSupport transactions fs > minSupport
               return fs
 
--- Remove duplicates 
+-- Remove duplicates
 -- Prelude.nub is slow
 noDups :: Ord a => [a] -> [a]
 noDups = S.toList . S.fromList
 
 generateNextLk :: Double -> [Transaction] -> (Int, [FrequentSet]) -> Maybe ([FrequentSet], (Int, [FrequentSet]))
-generateNextLk _ _ (_, []) = Nothing 
-generateNextLk minSupport transactions (k, lk) = 
-  let lk1 = noDups $ do FrequentSet a <- lk 
-                        FrequentSet b <- lk 
+generateNextLk _ _ (_, []) = Nothing
+generateNextLk minSupport transactions (k, lk) =
+  let lk1 = noDups $ do FrequentSet a <- lk
+                        FrequentSet b <- lk
                         guard $ S.size (a `S.intersection` b) == k-1
                         let fs = FrequentSet $ a `S.union` b
                         guard $ setSupport transactions fs > minSupport
                         return fs
   in Just (lk1, (k+1, lk1))
+
+generateAssocRules :: Double -> [Transaction] -> [FrequentSet] -> [AssocRule]
+generateAssocRules minConfidence transactions sets =
+  do FrequentSet fs <- sets
+     subset@(_:_) <- powerset $ S.toList fs
+     let ssubset = S.fromList subset
+         rule = AssocRule ssubset (fs `S.difference` ssubset)
+     guard $ ruleConfidence transactions rule > minConfidence
+     return rule
+
+powerset :: [a] -> [[a]]
+powerset []     = [[]]
+powerset (x:xs) = powerset xs ++ map (x:) (powerset xs)
+
+apriori :: Double -> Double -> [Transaction] -> [AssocRule]
+apriori minSupport minConfidence transactions =
+  generateAssocRules minConfidence transactions
+  $ concat $ unfoldr (generateNextLk minSupport transactions) (1, generateL1 minSupport transactions)
+
+-- ------------------------------------------------------------------------
+-- Search Problem
+-- ------------------------------------------------------------------------
+
+-- Paths in a graph
+
+-- (start, end) graph with no self-loops
+-- Recommend Data.Graph
+paths :: [(Int, Int)] -> Int -> Int -> [[Int]]
+paths edges start end =
+  let e_paths = do (e_start, e_end) <- edges
+                   guard $ e_start == start
+                   subpath <- paths edges e_end end
+                   return $ start:subpath
+  in if start == end
+        then return [end] `mplus` e_paths
+        else e_paths
+
+graph1 :: [(Int, Int)]
+graph1 = [(2013,501),(2013,1004),(501,2558),(1004,2558)]
+-- [[2013,501,2558],[2013,1004,2558]]
+
+-- The Logic Monad
+
+graph2 :: [(Int, Int)]
+graph2 = [(2013,501),(501,2558),(501,1004),(1004,501),(2013,2558)]
+-- take 3 $ paths graph2 2013 2558
+-- [[2013,501,2558],[2013,501,1004,501,2558],[2013,501,1004,501,1004,501,2558]]
+
+-- import Control.Monad.Logic
+pathsL :: [(Int, Int)] -> Int -> Int -> Logic [Int]
+pathsL edges start end =
+  let e_paths = do (e_start, e_end) <- choices edges
+                   guard $ e_start == start
+                   subpath <- pathsL edges e_end end
+                   return $ start:subpath
+  in if start == end
+        then return [end] `mplus` e_paths
+        else e_paths
+choices :: [a] -> Logic a
+choices = msum . map return
+-- observeMany 3 (pathsL graph2 2013 2558)
+-- [[2013,501,2558],[2013,501,1004,501,2558],[2013,501,1004,501,1004,501,2558]]
+-- Monad.Logic
+-- [1,2] `interleave` [3,4] == [1,3,2,4]
+
+-- Exercise 7-4
+pathsFair :: [(Int, Int)] -> Int -> Int -> [[Int]]
+pathsFair edges start end =
+  let e_paths = edges >>= \(e_start, e_end) ->
+                guard (e_start == start) >>
+                pathsFair edges e_end end >>= \subpath ->
+                return $ start:subpath
+  in if start == end
+        then return [end] `mplus` e_paths
+        else e_paths
+
+pathsLFair :: [(Int, Int)] -> Int -> Int -> Logic [Int]
+pathsLFair edges start end =
+  let e_paths = choices edges >>- \(e_start, e_end) ->
+                guard (e_start == start) >>
+                pathsLFair edges e_end end >>- \subpath ->
+                return $ start:subpath
+  in if start == end
+        then return [end] `mplus` e_paths
+        else e_paths
+
+-- ------------------------------------------------------------------------
+-- Monads and Lists Redux
+-- ------------------------------------------------------------------------
+addPrefix :: String -> Reader String String
+addPrefix s = ask >>= \p -> return $ p ++ s
+
+addPrefixF :: String -> Reader String String
+addPrefixF s = do p <- ask
+                  return $ p ++ s
+
+addPrefixL :: [String] -> Reader String [String]
+addPrefixL = mapM addPrefix
+-- λ> runReader (addPrefixL ["one", "two"]) "**-"
+-- ["**-one","**-two"]
+
+logInformation :: [String] -> Writer String ()
+logInformation = mapM_ (\s -> tell (s ++ "\n"))
+-- λ> runWriter $ logInformation ["One", "Two"]
+-- ((), "One\nTwo\n")
+
+logInformationR :: [String] -> Writer String ()
+logInformationR infos = forM_ infos $ \s -> tell (s++"\n")
+
+mySeqence :: (Traversable t, Monad m) => t (m a) -> m (t a)
+mySeqence s = undefined
+
+myMapM :: (Traversable t, Monad m) => (a -> m b) -> t a -> m (t b)
+myMapM f = sequenceA . fmap f
+
+myMapM' :: (Traversable t, Monad m) => (a -> m b) -> t a -> m (t b)
+myMapM' = traverse
+
+-- foldl ::            (a -> b -> a) -> a -> t b -> a
+-- foldM :: Monad m => (a -> b -> m a) -> a -> t b -> m a
+-- foldr ::            (a -> b -> b) -> b -> t a -> b
+
+factorialSteps :: Integer -> Writer (Sum Integer) Integer
+factorialSteps n = foldM (\f x -> tell (Sum 1) >> return (f*x)) 1 [1..n]
+
 

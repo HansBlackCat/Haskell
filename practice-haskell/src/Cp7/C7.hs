@@ -9,6 +9,7 @@ import Control.Monad.Reader
 import Control.Monad.Writer hiding (Product)
 import Data.Set (Set)
 import qualified Data.Set as S
+import Control.Monad.State
 
 -- monad transormers
 
@@ -53,3 +54,39 @@ find_ :: (a -> Bool) -> [a] -> Maybe a
 find_ f l = 
   let listJusted = map (\x -> Just x) l
 -}
+
+-- ---------------------------------------------------------------------
+-- State Practice
+-- https://wiki.haskell.org/State_Monad
+type GameValue = Int
+type GameState = (Bool, Int)
+playGame :: String -> State GameState GameValue
+playGame [] = do
+  (_, score) <- get
+  return score
+playGame (x:xs) = do
+    (on, score) <- get
+    case x of
+         'a' | on -> put (on, score + 1)
+         'b' | on -> put (on, score - 1)
+         'c'      -> put (not on, score)
+         _        -> put (on, score)
+    playGame xs
+
+startState :: GameState
+startState = (False, 0)
+
+testState :: IO ()
+testState = print $ evalState (playGame "abcabcabcbaaabbcbbabcbabcbc") startState
+
+-- Writer Practice
+data Entry = InEntry { id :: Int
+                     , msg :: String }
+             deriving (Show, Eq, Ord)
+
+logMsg :: String -> Writer [Entry] ()
+logMsg f = tell [InEntry 20 f]
+-- λ> logMsg "as"
+-- WriterT (Identity ((),[InEntry {id = 20, msg = "as"}]))
+-- λ> runWriter $ logMsg "as"
+-- ((),[InEntry {id = 20, msg = "as"}])
