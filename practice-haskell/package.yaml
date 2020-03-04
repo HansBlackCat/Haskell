@@ -27,6 +27,7 @@ dependencies:
 - lens < 5.0
 - mtl
 - logict < 1.0
+- random
 
 
 library:
