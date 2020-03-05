@@ -1,18 +1,19 @@
 module Cp7.C7 where
 
-import Data
+import           Data
 
-import Control.Monad
-import Control.Lens
-import Data.List
-import Control.Monad.Reader
-import Control.Monad.Writer hiding (Product)
-import Data.Set (Set)
-import qualified Data.Set as S
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad.Reader
+import           Control.Monad.Writer hiding (Product)
+import           Data.List
+import           Data.Set             (Set)
+import qualified Data.Set             as S
 
-import Control.Monad.State
-import System.Random
-import Control.Applicative
+import           Control.Applicative
+import           Control.Monad.Cont
+import           Control.Monad.State
+import           System.Random
 
 -- monad transormers
 
@@ -21,7 +22,7 @@ tab1 = [1,2,3] >>= \x -> [2*x, 3*x]
 tab1c = concat $ map (\x -> [2*x, 3*x]) [1,2,3]
 -- [2,3,4,6,6,9]
 
-tab2 = do 
+tab2 = do
   x <- [1,2,3]
   y <- [7,8,9]
   return $ x*y
@@ -41,7 +42,7 @@ tab4a n = [16, n^2]
 tab4p = tab4 3 `mplus` tab4a 10
 -- [2,4,16,100]
 
-tab5 = do 
+tab5 = do
   x <- [1..10]
   guard (x>6)
   return x
@@ -53,15 +54,17 @@ tab6a = msum [Just 1, Nothing, Just 3, Nothing]
 -- Just 1
 
 {- 7-2
-find_ :: (a -> Bool) -> [a] -> Maybe a 
-find_ f l = 
+find_ :: (a -> Bool) -> [a] -> Maybe a
+find_ f l =
   let listJusted = map (\x -> Just x) l
 -}
 
 -- Writer Practice
-data Entry = InEntry { id :: Int
-                     , msg :: String }
-             deriving (Show, Eq, Ord)
+data Entry = InEntry
+    { idE  :: Int
+    , msg :: String
+    }
+    deriving (Show, Eq, Ord)
 
 logMsg :: String -> Writer [Entry] ()
 logMsg f = tell [InEntry 20 f]
@@ -223,7 +226,8 @@ inc3Sugared' = do { getNext;getNext;getNext }
 -- evalState inc3Sugared  0 == -3
 -- evalState inc3Sugared' 0 == -3
 
-data MyStateType = MST Int Bool Char Int deriving Show
+data MyStateType = MST Int Bool Char Int
+    deriving Show
 getStateAny :: (Random a) => State StdGen a
 getStateAny = do g <- get
                  (x,g') <- return $ random g
@@ -244,9 +248,61 @@ makeRandomValueST = runState (do n <- getStateOne (1,100)
 -- ---------------------------------------------------------------------
 -- Writer
 -- ---------------------------------------------------------------------
+-- (value, log)
 
-data EntryW = LogW { countW :: Int
-                   , msgW :: String }
-                 deriving Show
+data EntryW = LogW
+    { countW :: Int
+    , msgW   :: String
+    }
+    deriving Show
 logMsgW :: String -> Writer [EntryW] ()
 logMsgW s = tell [LogW 1 s]
+-- runWriter $ logMsgW "ad" == ((),[LogW {countW = 1, msgW = "ad"}])
+
+-- runWriter (return 3 :: Writer String Int)        == (3,"")
+-- runWriter (return 3 :: Writer (Sum Int) Int)     == (3,Sum {getSum = 0})
+-- runWriter (return 3 :: Writer (Product Int) Int) == (3,Product {getProduct = 1})
+logNumber :: Int -> Writer [String] Int
+logNumber x = writer (x, ["Got number: " ++ show x])
+
+multiWithLog :: Writer [String] Int
+multiWithLog = do a <- logNumber 3
+                  b <- logNumber 5
+                  return (a*b)
+-- multiWithLog == WriterT (Identity (15,["Got number: 3","Got number: 5"]))
+-- runWriter multiWithLog == (15,["Got number: 3","Got number: 5"])
+
+multiWithLog' :: Writer [String] Int
+multiWithLog' = do a <- logNumber 3
+                   b <- logNumber 5
+                   tell ["Gonna multiply these two"]
+                   return (a*b)
+-- runWriter multiWithLog'
+--   == (15,["Got number: 3","Got number: 5", "Gonna multiply these two"])
+
+-- Euclid Algorithm
+gcd' :: Int -> Int -> Int
+gcd' a b
+  | b == 0    = a
+  | otherwise = gcd' b (a `mod` b)
+
+gcd'' :: Int -> Int -> Writer [String] Int
+gcd'' a b
+  | b == 0    = do tell ["Finished with " ++ show a]
+                   return a
+  | otherwise = do tell [show a ++ " mod " ++ show b ++ " = " ++ show (a `mod` b)]
+                   gcd'' b (a `mod` b)
+-- runWriter (gcd'' 8 3)
+--   == (1,["8 mod 3 = 2","3 mod 2 = 1","2 mod 1 = 0","Finished with 1"])
+-- mapM_ putStrLn $ snd $ ~
+
+-- ---------------------------------------------------------------------
+-- Difference List
+-- ---------------------------------------------------------------------
+
+
+
+-- ---------------------------------------------------------------------
+-- Continuous Monad
+-- ---------------------------------------------------------------------
+

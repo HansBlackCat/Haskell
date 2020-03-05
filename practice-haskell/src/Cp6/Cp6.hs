@@ -52,9 +52,9 @@ kMeansBase centroids points threshold =
       oldNewCentroids = newCentroidPhase assignments
       -- (`Old`, `New`)
       newCentroids = map snd oldNewCentroids
-    in 
+    in
       if thresholdChecking oldNewCentroids threshold
-        then newCentroids 
+        then newCentroids
         else kMeansBase newCentroids points threshold
 
 clusterAssignmentPhase :: (Ord v, Vector v, Vectorizable e v) => [v] -> [e] -> M.Map v [e]
@@ -74,6 +74,7 @@ thresholdChecking centroids threshold =
   foldr (\(x,y) s -> s + distance x y) 0.0 centroids<threshold
 
 -- Support Function
+simpleClusterNum :: (Num a, Floating a, RealFrac a) => a -> Int
 simpleClusterNum n = round $ sqrt (n/2)
 -- End Support Function
 
@@ -185,17 +186,17 @@ lls8 = llsPep & traversed.firstName %~ map toUpper -- [PersonTL {_firstName = "J
 -- K-Means 2
 -- ------------------------------------------------------------------------
 
-data KMeansState e v = 
+data KMeansState e v =
   KMeansState { _centroids :: [v]
               , _points :: [e]
               , _err :: Double
-              , _threshold :: Double 
+              , _threshold :: Double
               , _steps :: Int}
               deriving (Show)
 makeLenses ''KMeansState
 
 -- 1.0/0.0 == Infinity
-initializeState :: (Int -> [e] -> [v]) -> Int -> [e] -> Double -> KMeansState e v 
+initializeState :: (Int -> [e] -> [v]) -> Int -> [e] -> Double -> KMeansState e v
 initializeState i n pts t = KMeansState (i n pts) pts (1.0/0.0) t 0
 
 clusterAssignmentPhaseS :: (Vector v, Vectorizable e v) => KMeansState e v -> M.Map v [e]
@@ -205,14 +206,14 @@ kMeansS :: (Vector v, Vectorizable e v) => (Int -> [e] -> [v]) -> Int -> [e] -> 
 kMeansS i n pts t = view centroids $ kMeansSBase (initializeState i n pts t)
 
 kMeansSBase :: (Vector v, Vectorizable e v) => KMeansState e v -> KMeansState e v
-kMeansSBase state = 
+kMeansSBase state =
   let assignments = clusterAssignmentPhaseS state
       state1      = state & centroids.traversed
                           %~ (\c -> centroid $ fmap toVector
                                              $ M.findWithDefault [] c assignments)
       state2 = state1 & err .~ sum (zipWith distance (state ^. centroids) (state1 ^. centroids))
       state3 = state2 & steps +~ 1
-    in if state3 ^. err < state3 ^. threshold 
+    in if state3 ^. err < state3 ^. threshold
          then state3
          else kMeansSBase state3
 

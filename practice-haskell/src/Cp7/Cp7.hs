@@ -1,17 +1,18 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MonadComprehensions #-}
 module Cp7.Cp7 where
 
 import           Data
 
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Logic
 import           Control.Monad.Reader
 import           Control.Monad.Writer hiding (Product)
 import           Data.List
 import           Data.Set             (Set)
 import qualified Data.Set             as S
-import Control.Monad.Logic
 
 -- ------------------------------------------------------------------------
 -- Apriori Algorithm
@@ -206,11 +207,87 @@ myMapM f = sequenceA . fmap f
 myMapM' :: (Traversable t, Monad m) => (a -> m b) -> t a -> m (t b)
 myMapM' = traverse
 
--- foldl ::            (a -> b -> a) -> a -> t b -> a
+-- foldl ::            (a -> b ->   a) -> a -> t b ->   a
 -- foldM :: Monad m => (a -> b -> m a) -> a -> t b -> m a
--- foldr ::            (a -> b -> b) -> b -> t a -> b
+-- foldr ::            (a -> b ->   b) -> b -> t a ->   b
 
 factorialSteps :: Integer -> Writer (Sum Integer) Integer
 factorialSteps n = foldM (\f x -> tell (Sum 1) >> return (f*x)) 1 [1..n]
+-- factorialSteps 10 == WriterT (Identity (3628800,Sum {getSum = 10}))
+-- tell -> mappend Sum
 
+factorialSteps' :: Integer -> Writer (Sum Integer) Integer
+factorialSteps' n = foldM (\f x -> do tell (Sum 1)
+                                      return (f*x)) 1 [1..n]
+
+powerset' :: [a] -> [[a]]
+powerset' = filterM $ const [False,True]
+-- const a == (\_ -> a)
+-- active by nondeterministic list monads
+
+-- [1,2,3] >>= (\x -> [(2*x),(-x)]) == [2,-1,4,-2,6,-3]
+
+-- liftM :: Monad m => (a -> b) -> m a -> m b
+
+-- return compare        :: (Monad m, Ord a) => m (a -> a -> Ordering)
+-- return compare `ap` x :: (Monad m, Ord a) => m (a -> Ordering)
+
+-- ap  :: Monad m       => m (a -> b) -> m a -> m b
+-- <*> :: Applicative f => f (a -> b) -> f a -> f b
+
+-- {-# LANGUAGE MonadComprehensions #-}
+compreTest :: Integer -> Maybe Integer
+compreTest x = do a <- Just (x+1)
+                  b <- Just (x-1)
+                  c <- Just (2*x)
+                  return (a*b*c)
+
+compreTest' :: Integer -> Maybe Integer
+compreTest' x =
+  [ a*b*c
+  | a <- Just (x+1)
+  , b <- Just (x-1)
+  , c <- Just (2*x)]
+
+-- ------------------------------------------------------------------------
+-- Combining Monads
+-- ------------------------------------------------------------------------
+
+pathsWriter :: [(Int,Int)] -> Int -> Int -> [[Int]]
+pathsWriter edges start end
+  = map execWriter (pathWriterBase edges start end)
+
+pathWriterBase :: [(Int,Int)] -> Int -> Int -> [Writer [Int] ()]
+pathWriterBase edges start end =
+  let e_paths = do (e_start, e_end) <- edges
+                   guard $ e_start == start
+                   subpath <- pathWriterBase edges e_end end
+                   return $ do tell [start]
+                               subpath
+  in if start == end
+        then tell [start]:e_paths
+             else e_paths
+
+-- Monad Transformers
+pathsWriterT' :: [(Int,Int)] -> Int -> Int -> WriterT [Int] [] ()
+pathsWriterT' edges start end =
+  let e_paths = do (e_start, e_end) <- lift edges
+                   guard $ e_start == start
+                   tell [start]
+                   pathsWriterT' edges e_end end
+  in if start == end
+        then tell [start] `mplus` e_paths
+             else e_paths
+
+pathsWriterT :: [(Int,Int)] -> Int -> Int -> [[Int]]
+pathsWriterT edges start end = execWriterT (pathsWriterT' edges start end)
+
+-- combines Reader ans Writer
+readerWriterExample :: ReaderT Int (Writer String) Int
+readerWriterExample = do x <- ask
+                         lift . tell $ show x
+                         return $ x+1
+-- runWriter (runReaderT readerWriterExample 3) == (4,"3")
+
+-- p.272
 
