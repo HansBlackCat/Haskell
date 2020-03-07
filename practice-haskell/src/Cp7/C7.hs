@@ -5,10 +5,10 @@ import           Data
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Reader
-import           Control.Monad.Writer hiding (Product)
+import           Control.Monad.Writer    hiding (Product)
 import           Data.List
-import           Data.Set             (Set)
-import qualified Data.Set             as S
+import           Data.Set                (Set)
+import qualified Data.Set                as S
 
 import           Control.Applicative
 import           Control.Monad.Cont
@@ -61,7 +61,7 @@ find_ f l =
 
 -- Writer Practice
 data Entry = InEntry
-    { idE  :: Int
+    { idE :: Int
     , msg :: String
     }
     deriving (Show, Eq, Ord)
@@ -245,6 +245,84 @@ makeRandomValueST = runState (do n <- getStateOne (1,100)
                                  m <- getStateOne (-n,n)
                                  return (MST n b c m))
 
+-- State 3
+threeCoins :: StdGen -> (Bool,Bool,Bool)
+threeCoins gen =
+  let (firstCoin, newGen) = random gen
+      (secondCoin, newGen') = random newGen
+      (thirdCoin, _) = random newGen'
+  in (firstCoin, secondCoin, thirdCoin)
+
+-- Making stack
+type Stack = [Int]
+
+pop :: Stack -> (Int, Stack)
+pop [] = undefined
+pop (x:xs) = (x,xs)
+
+push :: Int -> Stack -> ((), Stack)
+push a xs = ((), a:xs)
+
+stackManip :: Stack -> (Int, Stack)
+stackManip stack =
+  let ((), newStack1) = push 3 stack
+      (_, newStack2) = pop newStack1
+  in pop newStack2
+
+-- newtype State s a = State { runState :: s -> (a, s) }
+popS :: State Stack Int
+popS = state $ \(x:xs) -> (x,xs)
+-- runState (popS) [1,2,3] == (1,[2,3])
+
+pushS :: Int -> State Stack ()
+pushS a = state $ \xs -> ((), a:xs)
+-- runState (pushS 10) [1,2,3] == ((),[10,1,2,3])
+
+stackManipS :: State Stack Int
+stackManipS = do pushS 3
+                 _ <- popS
+                 _ <- popS
+                 popS
+-- runState stackManipS [5,8,7,9] == (8,[7,9])
+
+stackManipS' :: State Stack Int
+stackManipS' = do pushS 3
+                  popS
+                  popS
+                  popS
+-- runState stackManipS' [5,8,7,9] == (8,[7,9])
+
+stackStuffS :: State Stack ()
+stackStuffS = do a <- popS
+                 if a == 5
+                   then pushS 5
+                   else do pushS 3
+                           pushS 8
+-- runState stackStuffS [4,5,6,7] == ((),[8,3,5,6,7])
+
+moreStuffS :: State Stack ()
+moreStuffS = do a <- stackManipS'
+                if a == 100
+                  then stackStuffS
+                  else return ()
+-- runState moreStuffS [4,5,6,7] == ((),[6,7])
+-- runState moreStuffS $ fmap (*100) [4,1,3,6] ==((),[8,3,600])
+
+whatisReturnS :: State Stack ()
+whatisReturnS = do return ()
+-- runState whatisReturnS [4,5,6,7] == ((),[4,5,6,7])
+
+stackyStack :: State Stack ()
+stackyStack = do stackNow <- get
+                 if stackNow == [1,2,3]
+                   then put [8,3,1]
+                   else put [9,2,1]
+-- runState stackyStack [1,2,3] == ((),[8,3,1])
+-- runState stackyStack [1,3,5] == ((),[9,2,1])
+
+
+
+
 -- ---------------------------------------------------------------------
 -- Writer
 -- ---------------------------------------------------------------------
@@ -295,6 +373,17 @@ gcd'' a b
 -- runWriter (gcd'' 8 3)
 --   == (1,["8 mod 3 = 2","3 mod 2 = 1","2 mod 1 = 0","Finished with 1"])
 -- mapM_ putStrLn $ snd $ ~
+
+-- ---------------------------------------------------------------------
+-- Reader
+-- ---------------------------------------------------------------------
+
+addStuff :: Int -> Int
+addStuff = do a <- (+3)
+              b <- (*3)
+              return (a*b)
+-- addStuff 10 == 390
+
 
 -- ---------------------------------------------------------------------
 -- Difference List
