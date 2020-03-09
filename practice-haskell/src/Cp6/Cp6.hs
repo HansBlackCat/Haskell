@@ -1,14 +1,14 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell       #-}
 module Cp6.Cp6 where
 
-import Data.List
-import Data.Map as M hiding (foldr, map)
-import Control.Lens
-import Data.Char
-import Control.Monad
+import           Control.Lens
+import           Control.Monad
+import           Data.Char
+import           Data.List
+import           Data.Map      as M hiding (foldr, map)
 
 -- Data Mining Algorithms
 -- cluster algorithms
@@ -18,25 +18,34 @@ import Control.Monad
 -- ------------------------------------------------------------------------
 -- cluster ~= sqrt (n/2) -- n: Data num
 
-class Ord v => Vector v where 
+class Ord v => Vector v where
   distance :: v -> v -> Double
   centroid :: [v] -> v
 
 -- {-# LANGUAGE FlexibleInstances #-}
--- Enable Vector (Double, Double) 
-instance Vector (Double, Double) where 
+-- Enable Vector (Double, Double)
+instance Vector (Double, Double) where
   distance (a,b) (c,d) = sqrt $ (c-a)*(c-a) + (d-b)*(d-b)
-  centroid lst = 
+  centroid lst =
     let (u,v) = foldr (\(a,b) (c,d) -> (a+c,b+d)) (0,0) lst
         n = fromIntegral $ length lst
-      in (u/n, v/n)
+    in (u/n, v/n)
 
 -- {-# LANGUAGE MultiParamTypeClass #-}
 class Vector v => Vectorizable e v where
-  toVector :: e -> v 
+  toVector :: e -> v
 
 instance Vectorizable (Double,Double) (Double,Double) where
   toVector = id -- (Double, Double) -> (Double, Double)
+
+{-
+let vec1 = (4,5) :: (Double,Double)
+let vec2 = (1.0, 6.5) :: (Double,Double)
+distance vec1 vec2
+centroid vec1
+toVector vec1 :: (Double,Double)
+  L :t toVector vec1 :: Vectorizable (Double,DOuble) v => v
+ -}
 
 kMeans :: (Vector v, Vectorizable e v)
   => (Int -> [e] -> [v]) -- initializer (function)
@@ -44,11 +53,12 @@ kMeans :: (Vector v, Vectorizable e v)
   -> [e] -- the information
   -> Double -- threshold const
   -> [v] -- centroids after convergence (Output)
-kMeans i k points = kMeansBase (i k points) points 
+kMeans i k points = kMeansBase (i k points) points
+-- == kMeansBase [v] [e] Double
 
 kMeansBase :: (Vector v, Vectorizable e v) => [v] -> [e] -> Double -> [v]
 kMeansBase centroids points threshold =
-  let assignments = clusterAssignmentPhase centroids points 
+  let assignments = clusterAssignmentPhase centroids points
       oldNewCentroids = newCentroidPhase assignments
       -- (`Old`, `New`)
       newCentroids = map snd oldNewCentroids
@@ -60,16 +70,16 @@ kMeansBase centroids points threshold =
 clusterAssignmentPhase :: (Ord v, Vector v, Vectorizable e v) => [v] -> [e] -> M.Map v [e]
 clusterAssignmentPhase centroids points =
   let initialMap = M.fromList $ zip centroids (repeat [])
-    in foldr (\p m -> let chosenC = minimumBy (compareDistance p) centroids
-                        in M.adjust (p:) chosenC m)
+    in foldr (\p ini -> let chosenC = minimumBy (compareDistance p) centroids -- closest point with p
+                        in M.adjust (p:) chosenC ini)
               initialMap points
-  where compareDistance p x y = compare (distance x $ toVector p) (distance y $ toVector p)
+  where compareDistance p ft st = compare (distance ft $ toVector p) (distance st $ toVector p)
 
 newCentroidPhase :: (Vector v, Vectorizable e v) => M.Map v [e] -> [(v,v)]
 newCentroidPhase = M.toList . fmap (centroid . map toVector)
 
 -- threshold checking
-thresholdChecking :: (Vector v) => [(v,v)] -> Double -> Bool 
+thresholdChecking :: (Vector v) => [(v,v)] -> Double -> Bool
 thresholdChecking centroids threshold =
   foldr (\(x,y) s -> s + distance x y) 0.0 centroids<threshold
 
@@ -83,7 +93,7 @@ kfuncDEBUG :: Int -> [e] -> [(Double,Double)]
 kfuncDEBUG 0 _ = []
 kfuncDEBUG n v = (fromIntegral n, fromIntegral n) : kfuncDEBUG (n-1) v
 kinfo = [(1,1),(1,2),(4,4),(4,5)] :: [(Double,Double)]
--- kMeans kfuncDEBUG 2 kinfo 0.001
+-- kMeans kfuncDEBUG 2 kinfo 0.001 == [(1.0,1.5),(4.0,4.5)]
 -- END kMeans DEBUG
 
 -- ------------------------------------------------------------------------
@@ -92,54 +102,69 @@ kinfo = [(1,1),(1,2),(4,4),(4,5)] :: [(Double,Double)]
 -- lens package: `lens`, `fclabels`, `data-accessor`, `data-lens`
 -- `lens` is huge so if possible use `microlens`
 
-data ClientL i = GovOrgL     i String
-               | CompanyL    i String PersonL String
-               | IndividualL i PersonL
-               deriving (Show)
-data PersonL = PersonL String String  deriving (Show)
+data ClientL i = GovOrgL i String
+    | CompanyL i String PersonL String
+    | IndividualL i PersonL
+    deriving (Show)
+data PersonL = PersonL String String
+    deriving (Show)
 
 -- lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
 -- Build a Lens from a getter and a setter.
 -- Lens': structure does not change when value change
-firstNameL :: Lens' PersonL String 
+firstNameL :: Lens' PersonL String
 firstNameL = lens (\(PersonL f _) -> f) (\(PersonL _ l) newF -> PersonL newF l)
 
-lastNameL :: Lens' PersonL String 
+lastNameL :: Lens' PersonL String
 lastNameL = lens (\(PersonL _ l) -> l) (\(PersonL f _) newL -> PersonL f newL)
 
-fullNameL :: Lens' PersonL String 
-fullNameL = lens (\(PersonL f l) -> f ++ " " ++ l) 
-                 (\_ newFullName -> case words newFullName of 
+fullNameL :: Lens' PersonL String
+fullNameL = lens (\(PersonL f l) -> f ++ " " ++ l)
+                 (\_ newFullName -> case words newFullName of
                                       f:l:_ -> PersonL f l
                                       _     -> error "Incorrect Name")
 
 -- {-# LANGUAGE LambdaCase #-}
 {-
 identifier :: Lens (ClientL i) (ClientL j) i j
-identifier = lens (\case (GovOrgL i _)      -> i 
-                         (CompanyL i _ _ _) -> i 
+identifier = lens (\case (GovOrgL i _)      -> i
+                         (CompanyL i _ _ _) -> i
                          (IndividualL i _)  -> i)
-                  (\client newId -> case client of 
-                    GovOrgL _ n      -> GovOrgL newId n 
-                    CompanyL _ n p r -> CompanyL newId n p r 
+                  (\client newId -> case client of
+                    GovOrgL _ n      -> GovOrgL newId n
+                    CompanyL _ n p r -> CompanyL newId n p r
                     IndividualL _ p  -> IndividualL newId p)
 -}
 
-data ClientTL i = GovOrgTL { _identifier :: i, _name :: String }
-                | CompanyTL { _identifier :: i, _name :: String
-                            , _person :: PersonTL, _duty :: String }
-                | IndividualTL { _identifier :: i, _person :: PersonTL }
-                deriving (Show)
-data PersonTL = PersonTL { _firstName :: String, _lastName :: String } deriving (Show)
+data ClientTL i = GovOrgTL
+    { _identifier :: i
+    , _name       :: String
+    }
+    | CompanyTL
+    { _identifier :: i
+    , _name       :: String
+    , _person     :: PersonTL
+    , _duty       :: String
+    }
+    | IndividualTL
+    { _identifier :: i
+    , _person     :: PersonTL
+    }
+    deriving (Show)
+data PersonTL = PersonTL
+    { _firstName :: String
+    , _lastName  :: String
+    }
+    deriving (Show)
 
 -- {-# LANGUAGE TemplateHaskell #-}
 makeLenses ''ClientTL
-makeLenses ''PersonTL 
+makeLenses ''PersonTL
 -- GHC Command Line Argument -ddump-splices
 
-fullNameTL :: Lens' PersonTL String 
-fullNameTL = lens (\(PersonTL f l) -> f ++ " " ++ l) 
-                  (\_ newFullName -> case words newFullName of 
+fullNameTL :: Lens' PersonTL String
+fullNameTL = lens (\(PersonTL f l) -> f ++ " " ++ l)
+                  (\_ newFullName -> case words newFullName of
                                        f:l:_ -> PersonTL f l
                                        _     -> error "Incorrect Name")
 
@@ -186,13 +211,14 @@ lls8 = llsPep & traversed.firstName %~ map toUpper -- [PersonTL {_firstName = "J
 -- K-Means 2
 -- ------------------------------------------------------------------------
 
-data KMeansState e v =
-  KMeansState { _centroids :: [v]
-              , _points :: [e]
-              , _err :: Double
-              , _threshold :: Double
-              , _steps :: Int}
-              deriving (Show)
+data KMeansState e v = KMeansState
+    { _centroids :: [v]
+    , _points    :: [e]
+    , _err       :: Double
+    , _threshold :: Double
+    , _steps     :: Int
+    }
+    deriving (Show)
 makeLenses ''KMeansState
 
 -- 1.0/0.0 == Infinity
@@ -221,7 +247,7 @@ kMeansSBase state =
 -- Monad
 -- ------------------------------------------------------------------------
 
--- p200 
+-- p200
 
 -- ------------------------------------------------------------------------
 -- Monad Law
