@@ -8,6 +8,7 @@ data AvailableGrid = AvailableList [Int]
                    | IsJust Int
                    deriving (Show, Eq, Ord)
 
+
 type PackedGrid = [(AvailableGrid, (Xval, Yval))]
 type Board = [PackedGrid]
 
@@ -50,15 +51,16 @@ baseUnwrapper typ = case typ of
                       IsJust a        -> a
                       AvailableList _ -> 0
 
+baseMonadic :: AvailableGrid -> [Int]
+baseMonadic (AvailableList a) = a
+baseMonadic (IsJust a) = [a]
+
+baseLoc :: (Int,Int) -> Int
+baseLoc (a,b) = a + 9*b
+
 -- ---------------------------------------------------------------------------
 -- Boxing Functions
 -- ---------------------------------------------------------------------------
-interpret :: String -> GeneralTupleStyle
-interpret input
-  | length input == 81 =
-    zip (fmap digitToInt input) baseIndex
-  | otherwise          = error "Length of String is not 81"
-
 tupToUntunedGrid :: GeneralTupleStyle -> PackedGrid
 tupToUntunedGrid [] = []
 tupToUntunedGrid (x:xs) =
@@ -70,6 +72,9 @@ untunedGridToUntunedBoard :: PackedGrid -> Board
 untunedGridToUntunedBoard [] = []
 untunedGridToUntunedBoard list = a : untunedGridToUntunedBoard b
   where (a,b) = splitAt 9 list
+
+tupToGrid :: GeneralTupleStyle -> Board
+tupToGrid = untunedGridToUntunedBoard . tupToUntunedGrid
 
 -- Unboxing
 unboxingGridToTuple :: PackedGrid -> GeneralTupleStyle
@@ -86,29 +91,82 @@ toDrawable = unboxingGridToTuple . concat
 -- Tuning Functions
 -- ---------------------------------------------------------------------------
 
---- HERER
+justList :: PackedGrid -> [Int]
+justList = dropWhile (<1).sort.fmap (baseUnwrapper.fst)
 
-baseTuning :: PackedGrid -> PackedGrid
-baseTuning g@(x:xs) =
-  let tunedList = undefined
-  in undefined
-  where justList = dropWhile (<1).sort.fmap (baseUnwrapper.fst)
+baseTuning :: [Int] -> PackedGrid -> PackedGrid
+baseTuning _ [] = []
+baseTuning jList (x:xs) =
+  case fst x of
+    AvailableList i
+      -> if length (i \\ jList) == 1
+            then (IsJust (head $ i \\ jList), snd x) : baseTuning jList xs
+            else (AvailableList (i \\ jList), snd x) : baseTuning jList xs
+    IsJust _        -> x : baseTuning jList xs
 
--- input : head testBoard
--- dropWhile (<1) . sort $ fmap (choose.fst) h
+-- input : testBoard
+-- dropWhile (<1) . sort . fmap (choose.fst) . head
 -- AvailableList :: [Int] -> AvailableGrid
 
 tuningBoard :: Board -> Board
-tuningBoard = tuningBox . tuningColumn $ tuningRow
-  where tuningRow = undefined
+tuningBoard = sortingBoard . tuningBox . tuningColumn . tuningRow
+  where tuningRow [] = []
+        tuningRow (y:ys) = baseTuning (justList y) y : tuningRow ys
         tuningColumn = tuningRow . transpose
-        tuningBox = undefined
+        tuningBox = tuningRow . untunedGridToUntunedBoard . sortBy (\a b -> compare (baseBox$snd a) (baseBox$snd b)) . concat
 
+-- baseBox :: (Int,Int)->Int
+-- sortBy (\a b -> compare (baseBox$snd a) (baseBox$snd b))
+
+-- Only for perfect matching, or infiloop
+perfectTuning :: Board -> Board
+perfectTuning board =
+  let tuned = tuningBoard board
+  in if not $ errorPicker tuned
+        then perfectTuning tuned
+        else tuned
+--let iter@(x:xs) = (fmap errorPicker $ iterate errorPicker board)
+
+sortingBoard :: Board -> Board
+sortingBoard = transpose . untunedGridToUntunedBoard . sortOn snd . concat
 
 -- ---------------------------------------------------------------------------
 -- Solving Functions
 -- ---------------------------------------------------------------------------
 
+errorPicker :: Board -> Bool
+errorPicker bo = and $ fmap and [checkBox bo, checkColumn bo, checkRow bo]
+  where checkRow [] = []
+        checkRow (pac:ys) = fitting pac:checkRow ys
+        checkColumn = checkRow . transpose
+        checkBox = checkRow . untunedGridToUntunedBoard . sortBy (\a b -> compare (baseBox$snd a) (baseBox$snd b)) . concat
+
+fitJust :: PackedGrid -> Bool
+fitJust pac = justList pac == nub (justList pac)
+fitAvai :: [Int] -> PackedGrid -> Bool
+fitAvai list pac = and $ boollist pac
+  where boollist [] = []
+        boollist (y:ys) =
+          case fst y of
+            AvailableList i -> ((i \\ list) == i) : boollist ys
+            _               -> boollist ys
+fitting :: PackedGrid -> Bool
+fitting pac = fitJust pac && fitAvai (justList pac) pac
+
+-- concat board
+firstAvail :: PackedGrid -> (AvailableGrid,(Xval,Yval))
+firstAvail [] = (IsJust (-1), (-1,-1))
+firstAvail (x:xs) =
+  case fst x of
+    AvailableList i -> (AvailableList i, snd x)
+    IsJust _        -> firstAvail xs
+
+{-
+solve =
+  do (a,b) <- firstAvail $ concat board
+     loc <- baseLoc b
+     
+-}
 -- ---------------------------------------------------------------------------
 -- IO Functions
 -- ---------------------------------------------------------------------------
@@ -128,13 +186,20 @@ draw (x:xs) = do putStr . show $ fst x
                           else do putStr " "
                                   draw xs
 
-tupToGrid :: GeneralTupleStyle -> PackedGrid
-tupToGrid = undefined
+interpret :: String -> GeneralTupleStyle
+interpret input
+  | length input == 81 =
+    zip (fmap digitToInt input) baseIndex
+  | otherwise          = error "Length of String is not 81"
 
+-- ---------------------------------------------------------------------------
 -- TEST function
+-- ---------------------------------------------------------------------------
 testInput :: String
 testInput = "060080204000002000802100007750004080000000003310009060405600001000003000070040609"
 testBoard :: Board
-testBoard = untunedGridToUntunedBoard . tupToUntunedGrid $ interpret testInput
+testBoard = tupToGrid $ interpret testInput
 testDraw :: IO ()
 testDraw = draw $ interpret testInput
+testGrid :: PackedGrid
+testGrid = zip [AvailableList [1,2,3,4,5],IsJust 3,AvailableList [1,3,5],AvailableList [2,4],IsJust 4, AvailableList [5]] [(x,0)|x<-[0..5]]
