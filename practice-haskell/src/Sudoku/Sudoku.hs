@@ -3,6 +3,7 @@ module Sudoku.Sudoku where
 
 import Data.Char
 import Data.List
+import System.IO
 
 data AvailableGrid = AvailableList [Int]
                    | IsJust Int
@@ -57,6 +58,14 @@ baseMonadic (IsJust a) = [a]
 
 baseLoc :: (Int,Int) -> Int
 baseLoc (a,b) = a + 9*b
+
+substitute :: Int -> [Int] -> PackedGrid -> PackedGrid
+substitute i list grid =
+  let (a,b) = splitAt i grid
+  in a ++ ((subs list, snd $ head b) : tail b)
+  where subs list = case length list of
+                      1 -> IsJust (head list)
+                      _ -> AvailableList list
 
 -- ---------------------------------------------------------------------------
 -- Boxing Functions
@@ -160,13 +169,20 @@ firstAvail (x:xs) =
   case fst x of
     AvailableList i -> (AvailableList i, snd x)
     IsJust _        -> firstAvail xs
+firstAvailLoc :: PackedGrid -> Int
+firstAvailLoc = baseLoc . snd . firstAvail
+
+
 
 {-
 solve =
   do (a,b) <- firstAvail $ concat board
      loc <- baseLoc b
-     
 -}
+-- subtitute loc list grid
+res1 = perfectTuning $ untunedGridToUntunedBoard test1
+  where test1 = substitute 0 [1] (concat $ perfectTuning testBoard)
+
 -- ---------------------------------------------------------------------------
 -- IO Functions
 -- ---------------------------------------------------------------------------
@@ -192,11 +208,19 @@ interpret input
     zip (fmap digitToInt input) baseIndex
   | otherwise          = error "Length of String is not 81"
 
+eulerIO :: IO [String]
+eulerIO = do str <- readFile "/Users/hansblackcat/Documents/Git/Haskell/practice-haskell/src/Sudoku/sudoku.txt"
+             return (lines str)
+
 -- ---------------------------------------------------------------------------
 -- TEST function
 -- ---------------------------------------------------------------------------
 testInput :: String
 testInput = "060080204000002000802100007750004080000000003310009060405600001000003000070040609"
+testInput2 :: String
+testInput2 = "003020600900305001001806400008102900700000008006708200002609500800203009005010300"
+testInput3 :: String
+testInput3 = "005000006070009020000500107804150000000803000000092805907006000030400010200000600"
 testBoard :: Board
 testBoard = tupToGrid $ interpret testInput
 testDraw :: IO ()
