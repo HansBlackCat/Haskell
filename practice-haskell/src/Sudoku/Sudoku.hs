@@ -174,6 +174,8 @@ firstAvailLoc = baseLoc . snd . firstAvail
 
 
 
+
+
 {-
 solve =
   do (a,b) <- firstAvail $ concat board
