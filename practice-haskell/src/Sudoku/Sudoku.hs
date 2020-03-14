@@ -128,16 +128,29 @@ tuningBoard = sortingBoard . tuningBox . tuningColumn . tuningRow
 -- sortBy (\a b -> compare (baseBox$snd a) (baseBox$snd b))
 
 -- Only for perfect matching, or infiloop
+-- MAXChecing: row x col x box = 9*9*9==729
+perfectTuning :: Board -> Board
+perfectTuning board =
+  let tuningList = tail . take 730 $ iterate tuningBoard board
+      recursiveTuningCheck [] = []
+      recursiveTuningCheck (x:xs) =
+        if not $ errorPicker x
+           then recursiveTuningCheck xs
+           else x
+  in recursiveTuningCheck tuningList
+--let iter@(x:xs) = (fmap errorPicker $ iterate errorPicker board)
+
+sortingBoard :: Board -> Board
+sortingBoard = transpose . untunedGridToUntunedBoard . sortOn snd . concat
+
+{- BACKUP
 perfectTuning :: Board -> Board
 perfectTuning board =
   let tuned = tuningBoard board
   in if not $ errorPicker tuned
         then perfectTuning tuned
         else tuned
---let iter@(x:xs) = (fmap errorPicker $ iterate errorPicker board)
-
-sortingBoard :: Board -> Board
-sortingBoard = transpose . untunedGridToUntunedBoard . sortOn snd . concat
+-}
 
 -- ---------------------------------------------------------------------------
 -- Solving Functions
@@ -172,10 +185,26 @@ firstAvail (x:xs) =
 firstAvailLoc :: PackedGrid -> Int
 firstAvailLoc = baseLoc . snd . firstAvail
 
+isPerfect :: Board -> Bool
+isPerfect [] = False
+isPerfect board =
+  let core [] = True
+      core (x:xs) =
+        case fst x of
+          AvailableList _ -> False
+          IsJust _        -> core xs
+  in core $ concat board
+
+solve :: Board -> Board
+solve board =
+  let concated = concat $ perfectTuning board
+      buffer g =
+        (substitute (firstAvailLoc g) [head.baseMonadic.fst$head g] g
+        ,substitute (firstAvailLoc g) (tail.baseMonadic.fst$head g) g)
+  in untunedGridToUntunedBoard.fst$buffer concated
 
 
-
-
+-- null == isEmpty
 {-
 solve =
   do (a,b) <- firstAvail $ concat board
@@ -203,6 +232,8 @@ draw (x:xs) = do putStr . show $ fst x
                                   draw xs
                           else do putStr " "
                                   draw xs
+qdraw :: Board -> IO ()
+qdraw = draw . toDrawable
 
 interpret :: String -> GeneralTupleStyle
 interpret input
@@ -221,6 +252,7 @@ testInput :: String
 testInput = "060080204000002000802100007750004080000000003310009060405600001000003000070040609"
 testInput2 :: String
 testInput2 = "003020600900305001001806400008102900700000008006708200002609500800203009005010300"
+testInput2' = "503020600900305001001806400008102900700000008006708200002609500800203009005010300"
 testInput3 :: String
 testInput3 = "005000006070009020000500107804150000000803000000092805907006000030400010200000600"
 testBoard :: Board
