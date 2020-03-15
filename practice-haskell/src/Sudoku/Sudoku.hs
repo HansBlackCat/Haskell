@@ -103,6 +103,13 @@ toDrawable = unboxingGridToTuple . concat
 justList :: PackedGrid -> [Int]
 justList = dropWhile (<1).sort.fmap (baseUnwrapper.fst)
 
+availList :: PackedGrid -> [[Int]]
+availList [] = []
+availList (x:xs) =
+  case fst x of
+    IsJust _        -> availList xs
+    AvailableList a -> a : availList xs
+
 baseTuning :: [Int] -> PackedGrid -> PackedGrid
 baseTuning _ [] = []
 baseTuning jList (x:xs) =
@@ -195,14 +202,8 @@ isPerfect board =
           IsJust _        -> core xs
   in core $ concat board
 
-solve :: Board -> Board
-solve board =
-  let concated = concat $ perfectTuning board
-      buffer g =
-        (substitute (firstAvailLoc g) [head.baseMonadic.fst$head g] g
-        ,substitute (firstAvailLoc g) (tail.baseMonadic.fst$head g) g)
-  in untunedGridToUntunedBoard.fst$buffer concated
-
+naked :: Board -> Board
+naked board = board
 
 -- null == isEmpty
 {-
