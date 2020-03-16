@@ -47,6 +47,12 @@ baseBox (a, b)
   | and [a<9,b<9] = 9
   | otherwise     = error "Indexing out-of range"
 
+baseOrbit :: (Int,Int) -> [(Int,Int)]
+baseOrbit (a,b) =
+  [(x,b)|x<-[0..8],baseBox (a,b)/=baseBox (x,b)]++
+  [(a,y)|y<-[0..8],baseBox (a,b)/=baseBox (a,y)]++
+  [(x,y)|x<-[a-2..a+2],y<-[b-2..b+2],(x,y)/=(a,b),baseBox (a,b)==baseBox (x,y)]
+
 baseUnwrapper :: AvailableGrid -> Int
 baseUnwrapper typ = case typ of
                       IsJust a        -> a
@@ -103,12 +109,20 @@ toDrawable = unboxingGridToTuple . concat
 justList :: PackedGrid -> [Int]
 justList = dropWhile (<1).sort.fmap (baseUnwrapper.fst)
 
-availList :: PackedGrid -> [[Int]]
+availList :: PackedGrid -> [([Int],(Xval,Yval))]
 availList [] = []
 availList (x:xs) =
   case fst x of
     IsJust _        -> availList xs
-    AvailableList a -> a : availList xs
+    AvailableList a -> (a, snd x) : availList xs
+
+orbitGrid :: (Int,Int) -> PackedGrid -> PackedGrid
+orbitGrid _ [] = []
+orbitGrid loc (g:gs) =
+  if elem (snd g) (baseOrbit loc)
+     then g : orbitGrid loc gs
+     else orbitGrid loc gs
+
 
 baseTuning :: [Int] -> PackedGrid -> PackedGrid
 baseTuning _ [] = []
@@ -133,6 +147,10 @@ tuningBoard = sortingBoard . tuningBox . tuningColumn . tuningRow
 
 -- baseBox :: (Int,Int)->Int
 -- sortBy (\a b -> compare (baseBox$snd a) (baseBox$snd b))
+
+naked :: Board -> Board
+naked board = board
+
 
 -- Only for perfect matching, or infiloop
 -- MAXChecing: row x col x box = 9*9*9==729
@@ -189,6 +207,13 @@ firstAvail (x:xs) =
   case fst x of
     AvailableList i -> (AvailableList i, snd x)
     IsJust _        -> firstAvail xs
+firstAvailS :: PackedGrid -> (AvailableGrid,(Xval,Yval))
+firstAvailS grid =
+  if (fst . snd $ afteravail) < 0
+     then (IsJust (baseUnwrapper . fst $ head grid ), snd $ head grid)
+     else afteravail
+  where afteravail = firstAvail grid
+
 firstAvailLoc :: PackedGrid -> Int
 firstAvailLoc = baseLoc . snd . firstAvail
 
@@ -202,8 +227,38 @@ isPerfect board =
           IsJust _        -> core xs
   in core $ concat board
 
-naked :: Board -> Board
-naked board = board
+amplifySpectrum' :: Board -> [Board]
+amplifySpectrum' board =
+  if (fst.snd$firstAvail percon) < 0
+     then [board]
+     else do x <- baseMonadic.fst$firstAvailS percon
+             return $ untunedGridToUntunedBoard (substitute (firstAvailLoc percon) [x] percon)
+  -- maybe perfectfitting here?
+  where percon = concat board
+
+
+----------------------
+amplifySpectrum :: Board -> [Board]
+amplifySpectrum board =
+  if (length $ amplifySpectrum' board) == 1
+     then []
+     else do x <- amplified
+             amplified ++ amplifySpectrum x
+  where amplified = amplifySpectrum' board
+
+
+solve :: Board -> Board
+solve board =
+  let tuned = concat $ perfectTuning board
+      favail t = baseMonadic.fst$firstAvail t
+      buffer t =
+        (substitute (firstAvailLoc t) [head $ favail t] t
+        ,substitute (firstAvailLoc t) (tail $ favail t) t)
+  in if isPerfect board
+        then board
+        else if null board
+                then solve . untunedGridToUntunedBoard . snd $ buffer tuned
+                else solve . untunedGridToUntunedBoard . fst $ buffer tuned
 
 -- null == isEmpty
 {-
@@ -262,3 +317,9 @@ testDraw :: IO ()
 testDraw = draw $ interpret testInput
 testGrid :: PackedGrid
 testGrid = zip [AvailableList [1,2,3,4,5],IsJust 3,AvailableList [1,3,5],AvailableList [2,4],IsJust 4, AvailableList [5]] [(x,0)|x<-[0..5]]
+testContamed :: Board
+testContamed =
+  untunedGridToUntunedBoard . substitute 1 [1..2] $ concat t2
+  where t = perfectTuning . tupToGrid $ interpret testInput2
+        t2 = untunedGridToUntunedBoard.substitute 0 [1..2] $ concat t
+
