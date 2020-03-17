@@ -227,48 +227,31 @@ isPerfect board =
           IsJust _        -> core xs
   in core $ concat board
 
-amplifySpectrum' :: Board -> [Board]
-amplifySpectrum' board =
-  if (fst.snd$firstAvail percon) < 0
+amplify :: Board -> [Board]
+amplify board =
+  if isPerfect board
      then [board]
-     else do x <- baseMonadic.fst$firstAvailS percon
-             return $ untunedGridToUntunedBoard (substitute (firstAvailLoc percon) [x] percon)
+     else let boardL =
+                do x <- baseMonadic.fst$firstAvailS percon
+                   return . perfectTuning $ untunedGridToUntunedBoard (substitute (firstAvailLoc percon) [x] percon)
+              concatWithoutNull [] = []
+              concatWithoutNull (x:xs) =
+                if null x
+                   then concatWithoutNull xs
+                   else x : concatWithoutNull xs
+          in concatWithoutNull boardL
   -- maybe perfectfitting here?
   where percon = concat board
 
-
-----------------------
 amplifySpectrum :: Board -> [Board]
-amplifySpectrum board =
-  if (length $ amplifySpectrum' board) == 1
-     then []
-     else do x <- amplified
-             amplified ++ amplifySpectrum x
-  where amplified = amplifySpectrum' board
+amplifySpectrum rawBoard =
+  if isPerfect rawBoard
+     then [rawBoard]
+     else do b <- amplify rawBoard
+             amplifySpectrum b
 
-
-solve :: Board -> Board
-solve board =
-  let tuned = concat $ perfectTuning board
-      favail t = baseMonadic.fst$firstAvail t
-      buffer t =
-        (substitute (firstAvailLoc t) [head $ favail t] t
-        ,substitute (firstAvailLoc t) (tail $ favail t) t)
-  in if isPerfect board
-        then board
-        else if null board
-                then solve . untunedGridToUntunedBoard . snd $ buffer tuned
-                else solve . untunedGridToUntunedBoard . fst $ buffer tuned
-
--- null == isEmpty
-{-
-solve =
-  do (a,b) <- firstAvail $ concat board
-     loc <- baseLoc b
--}
--- subtitute loc list grid
-res1 = perfectTuning $ untunedGridToUntunedBoard test1
-  where test1 = substitute 0 [1] (concat $ perfectTuning testBoard)
+solve :: GeneralTupleStyle -> IO ()
+solve = draw . toDrawable . head . amplifySpectrum . perfectTuning . tupToGrid
 
 -- ---------------------------------------------------------------------------
 -- IO Functions
@@ -322,4 +305,9 @@ testContamed =
   untunedGridToUntunedBoard . substitute 1 [1..2] $ concat t2
   where t = perfectTuning . tupToGrid $ interpret testInput2
         t2 = untunedGridToUntunedBoard.substitute 0 [1..2] $ concat t
+testJustBeforeCom :: Board
+testJustBeforeCom =
+  untunedGridToUntunedBoard . substitute 1 [1..9] $ concat t2
+  where t = perfectTuning . tupToGrid $ interpret testInput2
+        t2 = untunedGridToUntunedBoard.substitute 0 [2..4] $ concat t
 
