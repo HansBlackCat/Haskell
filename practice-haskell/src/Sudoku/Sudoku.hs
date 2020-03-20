@@ -253,6 +253,32 @@ amplifySpectrum rawBoard =
 solve :: GeneralTupleStyle -> IO ()
 solve = draw . toDrawable . head . amplifySpectrum . perfectTuning . tupToGrid
 
+
+amplify2 :: Board -> [Board]
+amplify2 board =
+  if isPerfect board
+     then [board]
+     else let boardL =
+                do x <- baseMonadic.fst$firstAvailS percon
+                   return $ untunedGridToUntunedBoard (substitute (firstAvailLoc percon) [x] percon)
+              concatWithoutNull [] = []
+              concatWithoutNull (x:xs) =
+                if null x
+                   then concatWithoutNull xs
+                   else x : concatWithoutNull xs
+          in concatWithoutNull boardL
+  -- maybe perfectfitting here?
+  where percon = concat board
+
+amplifySpectrum2 :: Board -> [Board]
+amplifySpectrum2 rawBoard =
+  if isPerfect rawBoard
+     then [rawBoard]
+     else do b <- amplify2 rawBoard
+             amplifySpectrum b
+
+solveWithoutTuning = draw . toDrawable. head . amplifySpectrum2 . tupToGrid
+
 -- ---------------------------------------------------------------------------
 -- IO Functions
 -- ---------------------------------------------------------------------------
@@ -294,6 +320,7 @@ testInput2 = "003020600900305001001806400008102900700000008006708200002609500800
 testInput2' = "503020600900305001001806400008102900700000008006708200002609500800203009005010300"
 testInput3 :: String
 testInput3 = "005000006070009020000500107804150000000803000000092805907006000030400010200000600"
+testInput4 = "000000000000003085001020000000507000004000100090000000500000073002010000000040009"
 testBoard :: Board
 testBoard = tupToGrid $ interpret testInput
 testDraw :: IO ()
