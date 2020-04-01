@@ -12,6 +12,7 @@ import System.IO
 import Control.Monad
 import System.Random
 import Control.Monad.Loops
+import System.FilePath
 
 data Person = Person { firstName :: String
                      , lastName :: String }
@@ -126,4 +127,21 @@ main6' = do (inFile:outFile:_) <- getArgs
                               hPutStrLn outHandle $ show (client,winner,year)
                               loop inHandle outHandle
                       else return ()
+
+main6'' :: IO()
+main6'' = do (inFile:outFile:_) <- getArgs
+             withFile inFile ReadMode $ \inHandle ->
+               withFile outFile WriteMode $ \outHandle -> do
+                 -- Write with UTF8 format
+                 hSetEncoding outHandle utf8
+                 loop inHandle outHandle
+          -- Same as main6'
+          where loop inHandle outHandle = undefined
+
+-- Due to difference between file path syntax between mac,linux and window(/ or \), we recommend to use library named `filepath`
+-- `</>`
+
+main7 = do (file:_) <- getArgs
+           let (folder, _) = splitFileName file
+           withFile (folder </> "example") WriteMode $ \handle -> undefined -- etc..
 

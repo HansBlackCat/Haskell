@@ -31,6 +31,9 @@ dependencies:
 - monad-par < 0.4.0
 - monad-loops < 1.0.0.0 #Cp9
 - vector
+- MissingH
+- filepath #Cp9
+
 
 library:
   source-dirs: src

@@ -5,6 +5,7 @@ import qualified Data.Vector as V
 import Data.List
 import Data.Bits
 import Data.Word
+import qualified Data.Bits.Utils as MB
 
 -- ---------------------------------------------------------------------------
 -- Base data
@@ -14,6 +15,16 @@ type Space = U.Vector Base
 
 totCellNums :: Int
 totCellNums = 81
+
+
+
+-- ---------------------------------------------------------------------------
+-- Debugging Function
+-- ---------------------------------------------------------------------------
+interpret :: String -> [Base]
+interpret = map (read . (:[]))
+
+
 
 -- ---------------------------------------------------------------------------
 -- Tools
@@ -36,8 +47,9 @@ countBits n = (cBLH 16 0xFFFF . cBLH 8 0xFF00FF . cBLH 4 0x0F0F0F0F . cBLH 2 0x3
 minus :: Base -> Base -> Base
 minus x y
   | maskChoices (x .&. y) == 0 = x
-  | otherwise = z .|. (shiftL (countBits z) 28)
-    where z = maskChoices $ x .&. (complement y)
+  | otherwise = z .|. shiftL (countBits z) 28
+  where
+    z = maskChoices $ x .&. complement y
 
 -- ---------------------------------------------------------------------------
 -- Settings
@@ -79,6 +91,8 @@ baseOptimize space index =
                 | otherwise = b
   in undefined
 
+-- ---------------------------------------------------------------------------
 -- Debug
+-- ---------------------------------------------------------------------------
 testRBase = 32 :: Base
 testRSpace = U.fromList [0..81] :: Space
