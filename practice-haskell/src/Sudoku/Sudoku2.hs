@@ -119,6 +119,7 @@ baseOptimize space index =
               then zeroOptimize newSpace
               else return newSpace
 
+{-
 lS :: Space -> Maybe Space
 lS unit =
   let known = maskChoices . accumTally $ U.filter single unit
@@ -132,7 +133,7 @@ lS unit =
                         U.map (\u -> if maskChoices (s.&.u) /= 0
                                        then Sudoku.Sudoku2.intersect s u
                                        else u) unit
-
+-}
 
 -- ---------------------------------------------------------------------------
 -- Debug
